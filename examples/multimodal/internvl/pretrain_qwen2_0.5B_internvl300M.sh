@@ -26,9 +26,6 @@ fi
 
 CHECKPOINT_DIR="${WORKSPACE}/${LOAD_NAME}/"
 
-# DATA_TRAIN="${SOURCE}/examples/multimodal/pretrain_dataset.yaml"
-
-# DEBUG=0
 if [[ $DEBUG -eq 1 ]]; then
     BZ=32
     NW=2

@@ -31,13 +31,10 @@ fi
 
 CHECKPOINT_DIR="${WORKSPACE}/${LOAD_NAME}/"
 
-# DATA_TRAIN="${SOURCE}/examples/multimodal/sft_dataset.yaml"
-
-# DEBUG=0
 if [[ $DEBUG -eq 1 ]]; then
     BZ=32
     NW=0
-    HD=0.0 #0.0
+    HD=0.0
     LI=1
     EXTRA_ARGS=""
     NONDETERMINISTIC_ATTN=1

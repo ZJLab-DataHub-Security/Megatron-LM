@@ -136,7 +136,7 @@ def get_batch(data_iterator, image_token_index, img_seq_len):
 
         # Get PackedSeqParams that indicate the amount of padding for TransformerEngine.
         packed_seq_params = context_parallel.get_packed_seq_params(tokens, num_image_embeddings, mp_padding_needed, args.context_parallel_size, True)
-    
+
     return (
         tokens,
         labels,

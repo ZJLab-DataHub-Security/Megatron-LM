@@ -1,23 +1,10 @@
 import argparse
-import os
-
 import torch
-# from transformers import AutoModel
-
 
 def convert(hf_model, tensor_parallel_size, new_state_dicts, use_te, hidden_size=1024, num_heads=16, kv_channels=64):
     """Convert InternViT HF checkpoint to mcore."""
-    # hf_model = AutoModel.from_pretrained(
-    #     model_name,
-    #     trust_remote_code=True
-    # )
 
     hf_state_dict = hf_model.state_dict()
-    # new_state_dicts = [{"model": dict()} for _ in range(tensor_parallel_size)]
-
-    # hidden_size = 3200
-    # num_heads = 25
-    # dim = 128 #fwj dim->head_size (head_num, head_size) hidden_size = head_num * head_size
 
     order = torch.ones(3 * hidden_size).long()
 
@@ -137,14 +124,6 @@ def convert(hf_model, tensor_parallel_size, new_state_dicts, use_te, hidden_size
         for i in range(tensor_parallel_size):
             new_state_dicts[i]["model"][prefix + new_name] = new_tensors[i].clone()
 
-    # for i in range(tensor_parallel_size):
-    #     output_dir_tp = os.path.join(output_path, f"iter_0000001/mp_rank_0{i}")
-    #     os.makedirs(output_dir_tp, exist_ok=True)
-    #     output_path_tp = os.path.join(output_dir_tp, "model_optim_rng.pt")
-    #     torch.save(new_state_dicts[i], output_path_tp)
-    #     print("saved file", output_path_tp)
-
-    # print("done")
 
 
 if __name__ == "__main__":

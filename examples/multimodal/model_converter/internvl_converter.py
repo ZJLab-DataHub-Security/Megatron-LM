@@ -105,13 +105,11 @@ def convert_qwen2(hf_model, new_state_dicts, args, hidden_size=896, num_heads=14
         mlp_down_weight = hf_state_dict[f'model.layers.{layer_id}.mlp.gate_proj.weight']
         mlp_gate_weight = hf_state_dict[f'model.layers.{layer_id}.mlp.up_proj.weight']
         mlp_down_weight = torch.cat((mlp_down_weight, mlp_gate_weight), axis=0)
-        # mlp_down_weight_tp = torch.chunk(mlp_down_weight, tensor_parallel_size, dim=0)
         mlp_down_weight_tp = [mlp_down_weight for _ in range(tensor_parallel_size)]
         
         mlp_down_base_name = f'{base}.mlp.linear_fc1.weight'
         
         mlp_up_weight = hf_state_dict[f'model.layers.{layer_id}.mlp.down_proj.weight']
-        # mlp_up_weight_tp = torch.chunk(mlp_up_weight, tensor_parallel_size, dim=1)
         mlp_up_weight_tp = [mlp_up_weight for _ in range(tensor_parallel_size)]
         
         mlp_up_base_name = f'{base}.mlp.linear_fc2.weight'
@@ -175,22 +173,18 @@ def convert_vision_proj_model(hf_model, tensor_parallel_size, new_state_dicts):
     ln_bias_base_name = f'encoder.linear_fc1.layer_norm_bias'
     
     linear_fc1_weight = hf_state_dict[f'1.weight']
-    # linear_fc1_weight_tp = torch.chunk(linear_fc1_weight, tensor_parallel_size, dim=0)
     linear_fc1_weight_tp = [linear_fc1_weight for _ in range(tensor_parallel_size)]
     linear_fc1_weight_base_name = f'encoder.linear_fc1.weight'
     
     linear_fc1_bias = hf_state_dict[f'1.bias']
-    # linear_fc1_bias_tp = torch.chunk(linear_fc1_bias, tensor_parallel_size, dim=0)
     linear_fc1_bias_tp = [linear_fc1_bias for _ in range(tensor_parallel_size)]
     linear_fc1_bias_base_name = f'encoder.linear_fc1.bias'
     
     linear_fc2_weight = hf_state_dict[f'3.weight']
-    # linear_fc2_weight_tp = torch.chunk(linear_fc2_weight, tensor_parallel_size, dim=1)
     linear_fc2_weight_tp = [linear_fc2_weight for _ in range(tensor_parallel_size)]
     linear_fc2_weight_base_name = f'encoder.linear_fc2.weight'
     
     linear_fc2_bias = hf_state_dict[f'3.bias']
-    # linear_fc2_bias_tp = torch.chunk(linear_fc2_bias, tensor_parallel_size, dim=1)
     linear_fc2_bias_tp = [linear_fc2_bias for _ in range(tensor_parallel_size)]
     linear_fc2_bias_base_name = f'encoder.linear_fc2.bias'
     

@@ -4,7 +4,7 @@ from megatron.core.transformer.module import MegatronModule
 from megatron.core.transformer.spec_utils import build_module
 from megatron.core.transformer.transformer_config import TransformerConfig
 from megatron.core.utils import make_viewless_tensor
-
+import torch
 
 class MultimodalProjector(MegatronModule):
     """
@@ -60,7 +60,7 @@ class MultimodalProjector(MegatronModule):
         """
         # Run encoder.
         encoder_output, encoder_output_bias = self.encoder(hidden_states)
-
+        print(f"linear fc1 weight dtype: {self.encoder.linear_fc1.weight.dtype}")
         if encoder_output_bias is not None:
             encoder_output = encoder_output + encoder_output_bias
 

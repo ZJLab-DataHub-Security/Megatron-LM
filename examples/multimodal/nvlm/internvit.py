@@ -36,7 +36,7 @@ from megatron.core.transformer.transformer_config import TransformerConfig
 from megatron.core.transformer.transformer_layer import TransformerLayer, TransformerLayerSubmodules
 from megatron.core.transformer.utils import make_sharded_tensors_for_checkpoint
 
-from examples.multimodal.layer_scaling import LayerScalingTransformerLayer, get_bias_dropout_add_layer_scaling
+from examples.multimodal.layer_scaling import LayerScalingTransformerLayer, get_bias_dropout_add_layer_scaling, get_bias_droppath_add_layer_scaling
 
 
 try:
@@ -256,7 +256,7 @@ def get_internvit_layer_spec(use_te) -> ModuleSpec:
         ),
     )
 
-def get_internvit300M_layer_spec(use_te) -> ModuleSpec:
+def get_internvit300M_layer_spec(use_te, use_linspace_drop_path=False) -> ModuleSpec:
     mlp = get_mlp_module_spec(use_te)  # no norm
 
     return ModuleSpec(
@@ -274,9 +274,9 @@ def get_internvit300M_layer_spec(use_te) -> ModuleSpec:
                     k_layernorm=None,
                 ),
             ),
-            self_attn_bda=get_bias_dropout_add_layer_scaling,
+            self_attn_bda=get_bias_dropout_add_layer_scaling if not use_linspace_drop_path else get_bias_droppath_add_layer_scaling,
             pre_mlp_layernorm=LNImpl,
             mlp=mlp,
-            mlp_bda=get_bias_dropout_add_layer_scaling,
+            mlp_bda=get_bias_dropout_add_layer_scaling if not use_linspace_drop_path else get_bias_droppath_add_layer_scaling,
         ),
     )

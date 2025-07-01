@@ -274,7 +274,7 @@ class TransformerBlock(MegatronModule):
         # if self.apply_query_key_layer_scaling:
         #     coeff = self.layer_number
         #     self.norm_factor *= coeff
-        def build_layer(layer_spec, layer_number):
+        def build_layer(layer_spec, layer_number, hidden_dropout):
             global_layer_number = layer_number + get_transformer_layer_offset(
                 self.config
             )  # 1-based index
@@ -285,13 +285,17 @@ class TransformerBlock(MegatronModule):
 
             fp8_init_context = get_fp8_context(layer_config, global_layer_number - 1, is_init=True)
             with fp8_init_context:
-                module = build_module(layer_spec, config=layer_config, layer_number=layer_number)
+                module = build_module(layer_spec, config=layer_config, layer_number=layer_number, hidden_dropout=hidden_dropout)
             return module
-
+        dpr = []
+        if self.config.use_linspace_drop_path:
+            dpr = [x.item() for x in torch.linspace(0, self.config.hidden_dropout, self.config.num_layers)]
+        else:
+            dpr = [self.config.hidden_dropout for _ in range(self.config.num_layers)]
         # offset is implicit in TransformerLayer
         self.layers = torch.nn.ModuleList(
             [
-                build_layer(layer_spec, i + 1)
+                build_layer(layer_spec, i + 1, dpr[i])
                 for i, layer_spec in enumerate(self.submodules.layer_specs)
             ]
         )

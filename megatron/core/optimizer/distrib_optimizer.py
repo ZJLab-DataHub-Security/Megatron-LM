@@ -875,7 +875,8 @@ class DistributedOptimizer(MixedPrecisionOptimizer):
             optim_state = self.optimizer.state[main_param]
             dst_tensors = {"param": main_param, **optim_state}
             for key in dst_tensors:
-                dst_tensors[key].copy_(tensors[key])
+                with torch.no_grad():
+                    dst_tensors[key].copy_(tensors[key])
 
     def get_parameter_state_fs_bucket_space(self):
         """Get internal representation of parameter state without any copies and modifications.

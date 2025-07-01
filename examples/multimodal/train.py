@@ -136,7 +136,7 @@ def get_batch(data_iterator, image_token_index, img_seq_len):
 
         # Get PackedSeqParams that indicate the amount of padding for TransformerEngine.
         packed_seq_params = context_parallel.get_packed_seq_params(tokens, num_image_embeddings, mp_padding_needed, args.context_parallel_size, True)
-
+    
     return (
         tokens,
         labels,
@@ -223,7 +223,7 @@ def scaled_loss_func(loss_mask, output_tensor):
         loss_list[idx] = loss_list[idx] * math.sqrt(num_valid_labels_list[idx]) / base_num
 
     # Some ranks may not get loss tokens due to Context Parallel Sharding
-    if len(loss_list) > 0
+    if len(loss_list) > 0:
         total_loss = torch.stack(loss_list).sum()
         total_tokens = torch.ones_like(total_loss)
     elif len(loss_list) == 0 and args.context_parallel_size > 1:
@@ -294,6 +294,10 @@ def forward_step(data_iterator, model: LLaVAModel):
     """
     timers = get_timers()
 
+    args = get_args()
+    if args.bf16 or args.fp16:
+        model = model.module
+    
     # Get the batch.
     timers('batch-generator', log_level=2).start()
     (
@@ -305,7 +309,7 @@ def forward_step(data_iterator, model: LLaVAModel):
         images,
         num_image_tiles,
         packed_seq_params,
-    ) = get_batch(data_iterator, model.module.module.image_token_index, model.module.module.img_seq_len)
+    ) = get_batch(data_iterator, model.module.image_token_index, model.module.img_seq_len)
     timers('batch-generator').stop()
 
     output_tensor, loss_mask = model(
@@ -318,7 +322,7 @@ def forward_step(data_iterator, model: LLaVAModel):
         num_image_tiles=num_image_tiles,
         packed_seq_params=packed_seq_params,
     )
-    args = get_args()
+    
     if args.use_loss_scaling:
         loss_function = partial(scaled_loss_func, loss_mask)
     else:

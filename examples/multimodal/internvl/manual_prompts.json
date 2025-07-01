@@ -1,0 +1,11 @@
+{
+    "COMMENT": "Sources for these prompts of nougat",
+    "CaptioningPretraining": {
+        "raw": [
+            "Convert this table to LaTeX."
+        ],
+        "llava": [
+            "Convert this table to LaTeX."
+        ]
+    }
+}

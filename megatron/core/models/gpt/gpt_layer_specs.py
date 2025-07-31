@@ -143,10 +143,12 @@ def get_gpt_layer_with_transformer_engine_spec(
         # TENorm significantly harms convergence when used
         # for QKLayerNorm if TE Version < 1.9;
         # we instead use the Apex implementation.
-        qk_norm = TENorm if is_te_min_version("1.9.0") else FusedLayerNorm
+        # qk_norm = TENorm if is_te_min_version("1.9.0") else FusedLayerNorm
+        qk_norm = TENorm
         return ModuleSpec(
             module=TransformerLayer,
             submodules=TransformerLayerSubmodules(
+                input_layernorm=TENorm,
                 self_attention=ModuleSpec(
                     module=SelfAttention,
                     params={"attn_mask_type": AttnMaskType.causal},

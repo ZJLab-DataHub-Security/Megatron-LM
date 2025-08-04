@@ -426,6 +426,10 @@ class MegatronCheckpointSaverBase:
                 dense_weight = chunk_weight(msg.pop("dense weight"), "row", self.args.target_tensor_parallel_size)
                 mlp_l1_weight = chunk_weight(msg.pop("mlp l1 weight"), "row", self.args.target_tensor_parallel_size, self.args.target_expert_parallel_size)
 
+                if self.md.qk_layernorm:
+                    k_norm_weight = msg.pop("k norm weight")
+                    q_norm_weight = msg.pop("q norm weight")
+
                 if self.margs.num_experts:
                     router = msg.pop("router weight")
 
@@ -458,6 +462,11 @@ class MegatronCheckpointSaverBase:
                             "self_attn_proj_weight" : dense_weight[tp_rank],
                             "mlp_norm_weight" : post_norm_weight
                         }
+                        if self.md.qk_layernorm:
+                            params_dict.update({
+                                "k_layernorm_weight": k_norm_weight,
+                                "q_layernorm_weight": q_norm_weight,
+                            })
                         if self.margs.num_experts:
                             params_dict.update({
                                 "mlp_fc1_weight" : mlp_l0_weight[ep_rank][tp_rank],

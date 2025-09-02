@@ -50,11 +50,19 @@ class MegatronCheckpointSaverLLM(MegatronCheckpointSaverBase):
 
     def receive_model(self):
         # Model schema.
+        extra_layer_schema = {}
+        if self.md.qk_layernorm:
+            extra_layer_schema = {
+                "q_layernorm_weight": "self_attention.q_layernorm.weight",
+                "k_layernorm_weight": "self_attention.k_layernorm.weight",
+            }
         schema = get_model_schema(
             self.md.model_type,
             self.margs.transformer_impl,
             self.margs.num_experts,
             self.margs.expert_model_parallel_size,
+            extra_layer_schema=extra_layer_schema,
+            moe_grouped_gemm=self.md.moe_grouped_gemm,
         )
         self.receive_lm(schema)
 

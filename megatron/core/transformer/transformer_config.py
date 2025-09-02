@@ -141,6 +141,9 @@ class TransformerConfig(ModelParallelConfig):
 
     multi_latent_attention: bool = False
     """Whether to use multi-latent attention."""
+    
+    use_linspace_drop_path: bool = False
+    """Whether to use linspace drop path rate in ViT."""
 
     ####################
     # initialization

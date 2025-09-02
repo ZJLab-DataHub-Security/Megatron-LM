@@ -89,5 +89,7 @@ def add_multimodal_extra_args(parser):
             "image aspect ratio and the area covered by the tiles.")
     )
     group.add_argument("--use-mcore-inference", action="store_true", default=False, help="Use the MCore inference API")
+    group.add_argument("--use-linspace-drop-path", action="store_true", default=False, help="Use the linspace drop path rate for all layers of vision model")
+    group.add_argument("--drop-path-rate", type=float, default=0.0, help="Set the drop path rate for the ViT. Default is 0.")
 
     return parser

@@ -4,9 +4,10 @@ from dataclasses import dataclass
 import torch
 
 from megatron.training.activations import fast_gelu, quick_gelu, squared_relu
-
+from megatron.training import get_args
 
 def get_language_model_config(config):
+    config.use_linspace_drop_path = False
     if config.language_model_type == "llama3_8b":
         config.activation_func = torch.nn.functional.silu
         config.add_bias_linear = False
@@ -82,6 +83,20 @@ def get_language_model_config(config):
         config.apply_rope_fusion = False
         config.attention_softmax_in_fp32 = True
         config.ffn_hidden_size = 20480
+    elif config.language_model_type == "qwen2.0_0.5B":
+        config.activation_func = torch.nn.functional.silu
+        config.add_bias_linear = False
+        config.add_qkv_bias = True
+        config.bias_activation_fusion = False
+        config.gated_linear_unit = True
+        config.apply_query_key_layer_scaling = False
+        config.layernorm_zero_centered_gamma = (
+            False  # Zero centered gamma not supported for RMSNorm
+        )
+        config.bias_dropout_fusion = False
+        config.apply_rope_fusion = False
+        config.attention_softmax_in_fp32 = True
+        config.ffn_hidden_size = 4864
     elif config.language_model_type == "qwen2.0_72B":
         config.activation_func = torch.nn.functional.silu
         config.add_bias_linear = False
@@ -177,6 +192,7 @@ def get_language_model_config(config):
 
 
 def get_vision_model_config(config, apply_query_key_layer_scaling):
+    args = get_args()
     if config.vision_model_type == "clip":
         config.num_layers = 24
         config.num_attention_heads = 16
@@ -247,7 +263,7 @@ def get_vision_model_config(config, apply_query_key_layer_scaling):
         config.add_qkv_bias = True
         config.hidden_size = 1024
         config.kv_channels = 64
-        config.hidden_dropout = 0.0
+        config.hidden_dropout = args.drop_path_rate
         config.ffn_hidden_size = 4096
         config.gated_linear_unit = False
         config.activation_func = torch.nn.functional.gelu
@@ -331,6 +347,11 @@ def get_vision_projection_config(config, hidden_size):
         config.normalization = None
     elif config.language_model_type == "yi-34b":
         config.ffn_hidden_size = 20480
+        config.normalization = "LayerNorm"
+        config.activation_func = torch.nn.functional.gelu
+    elif config.language_model_type == "qwen2.0_0.5B":
+        config.add_bias_linear = True
+        config.ffn_hidden_size = 896
         config.normalization = "LayerNorm"
         config.activation_func = torch.nn.functional.gelu
     elif config.language_model_type == "qwen2.0_72B":

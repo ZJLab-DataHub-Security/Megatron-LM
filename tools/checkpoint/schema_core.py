@@ -100,8 +100,21 @@ class CoreTESchema(CoreSchema):
 
 class CoreMoETESchema(CoreSchema):
 
-    def __init__(self, model_type, num_experts, expert_model_parallel_size, prefix, extra_layer_schema):
+    def __init__(self, model_type, num_experts, expert_model_parallel_size, prefix, extra_layer_schema, moe_grouped_gemm=False):
         num_local_experts = num_experts // expert_model_parallel_size
+        mlp_expert_schema = {}
+        if not moe_grouped_gemm:
+            mlp_expert_schema = {
+                **{f"mlp_fc1_weight.{expert_idx}" : f"mlp.experts.local_experts.{expert_idx}.linear_fc1.weight" for expert_idx in range(num_local_experts) },
+                **{f"mlp_fc2_weight.{expert_idx}" : f"mlp.experts.local_experts.{expert_idx}.linear_fc2.weight" for expert_idx in range(num_local_experts) },
+            }
+        else:
+            mlp_expert_schema = {
+                **{f"mlp_fc1_weight.{expert_idx}" : f"mlp.experts.linear_fc1.weight{expert_idx}" for expert_idx in range(num_local_experts) },
+                **{f"mlp_fc2_weight.{expert_idx}" : f"mlp.experts.linear_fc2.weight{expert_idx}" for expert_idx in range(num_local_experts) },
+
+            }
+
         super().__init__(model_type, layer_schema={
 
             # Self attention.
@@ -120,10 +133,8 @@ class CoreMoETESchema(CoreSchema):
 
             "router_weight" : "mlp.router.weight",
 
-            **{f"mlp_fc1_weight.{expert_idx}" : f"mlp.experts.local_experts.{expert_idx}.linear_fc1.weight" for expert_idx in range(num_local_experts) },
-            **{f"mlp_fc2_weight.{expert_idx}" : f"mlp.experts.local_experts.{expert_idx}.linear_fc2.weight" for expert_idx in range(num_local_experts) },
-
-        } | extra_layer_schema, prefix=prefix)
+            
+        } | mlp_expert_schema | extra_layer_schema, prefix=prefix)
 
 
 def get_model_schema(
@@ -133,12 +144,13 @@ def get_model_schema(
     expert_model_parallel_size: T.Optional[int] = None,
     prefix: T.Optional[str] = "",
     extra_layer_schema: T.Optional[dict] = {},
+    moe_grouped_gemm: T.Optional[bool] = False,
 ) -> CoreSchema:
     if num_experts is not None and num_experts > 0:
         # Only support TE setter for MOE
         assert transformer_impl == "transformer_engine"
         assert isinstance(expert_model_parallel_size, int)
-        return CoreMoETESchema(model_type, num_experts, expert_model_parallel_size, prefix, extra_layer_schema)
+        return CoreMoETESchema(model_type, num_experts, expert_model_parallel_size, prefix, extra_layer_schema, moe_grouped_gemm)
     return {
         "local" : CoreLocalSchema,
         "transformer_engine" : CoreTESchema,

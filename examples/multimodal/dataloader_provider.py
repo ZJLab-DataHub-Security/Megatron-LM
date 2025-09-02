@@ -60,8 +60,30 @@ def datasets_provider(worker_config=None):
         )
         for val_ds, _src_ds in val_datasets
     ]
-
-    return train_dataset, val_datasets_without_source_datasets, None
+    test_datasets = get_val_datasets(
+        dname,
+        split_part='test',
+        batch_size=args.micro_batch_size,
+        # This is the total number over all workers
+        # limit=args.eval_iters * get_num_microbatches(),
+        task_encoder=TaskEncoder(),
+        worker_config=worker_config,
+        packing_buffer_size=args.packing_buffer_size,
+        handler=print_error_handler,
+        image_decode="pil",
+    )
+    test_datasets_without_source_datasets = [
+        # Limit the dataset to eval_iters * num_microbatches
+        LimitDataset(
+            # Repeat the inner dataset in case it's too short
+            RepeatDataset(test_ds, worker_config=worker_config),
+            length=args.eval_iters * get_num_microbatches(),
+            worker_config=worker_config,
+            reset_after_epoch=True,
+        )
+        for test_ds, _src_ds in test_datasets
+    ]
+    return train_dataset, val_datasets_without_source_datasets, test_datasets_without_source_datasets
 
 
 def is_first_or_last_stage(pp_size, encoder_pipeline_model_parallel_size):
@@ -143,9 +165,14 @@ def train_valid_test_dataloaders_provider(train_val_test_num_samples):
         EnergonDataloader(get_loader(valid_ds, worker_config=worker_config))
         for valid_ds in valid_ds1
     ]
-    test_dataloader = None
+    # test_dataloader = None
 
-    return EnergonDataloader(train_dataloader), valid_dataloader, EnergonDataloader(test_dataloader)
+    test_dataloader = [
+        EnergonDataloader(get_loader(test, worker_config=worker_config))
+        for test in test_ds
+    ]
+
+    return EnergonDataloader(train_dataloader), valid_dataloader, test_dataloader
 
 
 class EnergonDataloader:

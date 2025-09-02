@@ -468,9 +468,12 @@ class MegatronCheckpointSaverBase:
                                 "q_layernorm_weight": q_norm_weight,
                             })
                         if self.margs.num_experts:
+                            num_local_experts = self.margs.num_experts // self.margs.expert_model_parallel_size
+                            mlp_l0_weight_eps = torch.chunk(mlp_l0_weight[ep_rank][tp_rank], chunks=num_local_experts, dim=0)
+                            mlp_l1_weight_eps = torch.chunk(mlp_l1_weight[ep_rank][tp_rank], chunks=num_local_experts, dim=0)
                             params_dict.update({
-                                "mlp_fc1_weight" : mlp_l0_weight[ep_rank][tp_rank],
-                                "mlp_fc2_weight" : mlp_l1_weight[ep_rank][tp_rank]
+                                **{f"mlp_fc1_weight.{expert_idx}" : torch.squeeze(mlp_l0_weight_eps[expert_idx], dim=0) for expert_idx in range(num_local_experts) },
+                                **{f"mlp_fc2_weight.{expert_idx}" : torch.squeeze(mlp_l1_weight_eps[expert_idx], dim=0) for expert_idx in range(num_local_experts) },
                             })
                         else:
                             params_dict.update({
